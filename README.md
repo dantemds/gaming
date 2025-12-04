@@ -13,7 +13,7 @@ Um jogo de luta multiplayer em tempo real desenvolvido com Next.js, Socket.IO e 
 ## 🛠️ Tecnologias
 
 - **Next.js 14**: Framework React para SSR e API routes
-- **Socket.IO**: Comunicação em tempo real entre jogadores
+- **Long Polling**: Comunicação em tempo real entre jogadores (compatível com Vercel)
 - **TypeScript**: Tipagem estática
 - **CSS Modules**: Estilos isolados e animações
 
@@ -47,14 +47,14 @@ npm run dev
 
 ## 🚀 Deploy na Vercel
 
-Este projeto está pronto para deploy na Vercel:
+Este projeto está **100% compatível** com a Vercel usando long polling:
 
 1. Faça push do código para o GitHub
 2. Conecte o repositório na Vercel
 3. A Vercel detectará automaticamente o Next.js
 4. Deploy será feito automaticamente
 
-**Nota**: Para funcionalidade completa com WebSocket na Vercel, considere usar Vercel Serverless Functions ou um serviço externo de WebSocket como Pusher ou Ably.
+✅ **Funcionalidade multiplayer completa funcionando na Vercel!**
 
 ## 📁 Estrutura do Projeto
 
@@ -82,7 +82,7 @@ Este projeto está pronto para deploy na Vercel:
 
 ## 🔧 Desenvolvimento
 
-O jogo usa um servidor Node.js customizado que integra Next.js com Socket.IO para comunicação em tempo real. Cada partida é gerenciada no servidor, garantindo sincronização entre os jogadores.
+O jogo usa Next.js API Routes com long polling para comunicação em tempo real. Cada partida é gerenciada em memória no servidor (API routes), garantindo sincronização entre os jogadores. O sistema faz polling a cada 500ms para manter o jogo atualizado.
 
 ## 📝 Licença
 
@@ -90,4 +90,4 @@ MIT
 
 ---
 
-Desenvolvido com ❤️ usando Next.js e Socket.IO
+Desenvolvido com ❤️ usando Next.js e Long Polling

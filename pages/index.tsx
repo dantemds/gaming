@@ -1,75 +1,152 @@
-import { useState, useEffect } from 'react'
-import { io, Socket } from 'socket.io-client'
+import { useState, useEffect, useRef } from 'react'
 import styles from '@/styles/Game.module.css'
-
-let socket: Socket;
 
 export default function Home() {
   const [gameState, setGameState] = useState<'login' | 'waiting' | 'playing' | 'gameover'>('login')
   const [playerName, setPlayerName] = useState('')
+  const [playerId] = useState(() => `player-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
   const [matchData, setMatchData] = useState<any>(null)
   const [player1Health, setPlayer1Health] = useState(100)
   const [player2Health, setPlayer2Health] = useState(100)
   const [lastAction, setLastAction] = useState<any>(null)
   const [winner, setWinner] = useState<string>('')
   const [canAttack, setCanAttack] = useState(true)
+  const pollingInterval = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
-    socketInitializer()
-
     return () => {
-      if (socket) socket.disconnect()
+      if (pollingInterval.current) {
+        clearInterval(pollingInterval.current)
+      }
     }
   }, [])
 
-  const socketInitializer = async () => {
-    await fetch('/api/socket')
-    socket = io()
-
-    socket.on('waiting', () => {
-      setGameState('waiting')
-    })
-
-    socket.on('match-found', (data) => {
-      setMatchData(data)
-      setPlayer1Health(100)
-      setPlayer2Health(100)
-      setGameState('playing')
-    })
-
-    socket.on('game-update', (data) => {
-      setPlayer1Health(data.player1Health)
-      setPlayer2Health(data.player2Health)
-      setLastAction(data.lastAction)
-      
-      setTimeout(() => setLastAction(null), 1000)
-    })
-
-    socket.on('game-over', (data) => {
-      setWinner(data.winnerName)
-      setGameState('gameover')
-    })
-
-    socket.on('opponent-disconnected', () => {
-      alert('Oponente desconectou!')
-      window.location.reload()
-    })
-  }
-
-  const handleJoinQueue = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (playerName.trim()) {
-      socket.emit('join-queue', playerName)
+  const startPolling = (matchId: string) => {
+    if (pollingInterval.current) {
+      clearInterval(pollingInterval.current)
     }
+
+    pollingInterval.current = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/match/${matchId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ playerId })
+        })
+
+        if (response.ok) {
+          const match = await response.json()
+          
+          setPlayer1Health(match.player1.health)
+          setPlayer2Health(match.player2.health)
+
+          if (match.lastAction && match.lastAction.timestamp) {
+            const actionAge = Date.now() - match.lastAction.timestamp
+            if (actionAge < 2000) { // Mostrar ação se foi nos últimos 2 segundos
+              setLastAction(match.lastAction)
+              setTimeout(() => setLastAction(null), 1000)
+            }
+          }
+
+          if (match.winner) {
+            const winnerName = match.winner === matchData.playerNumber ? playerName : matchData.opponent
+            setWinner(winnerName)
+            setGameState('gameover')
+            if (pollingInterval.current) {
+              clearInterval(pollingInterval.current)
+            }
+          }
+        } else {
+          // Match não encontrado, pode ter expirado
+          if (pollingInterval.current) {
+            clearInterval(pollingInterval.current)
+          }
+          alert('Partida encerrada ou expirada!')
+          window.location.reload()
+        }
+      } catch (error) {
+        console.error('Erro no polling:', error)
+      }
+    }, 500) // Poll a cada 500ms
   }
 
-  const handleAction = (action: 'attack' | 'defend') => {
+  const handleJoinQueue = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!playerName.trim()) return
+
+    setGameState('waiting')
+
+    // Tentar entrar na fila
+    const checkQueue = async () => {
+      try {
+        const response = await fetch('/api/join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ playerId, playerName })
+        })
+
+        const result = await response.json()
+
+        if (result.status === 'matched') {
+          setMatchData({
+            matchId: result.matchId,
+            playerNumber: result.playerNumber,
+            opponent: result.opponent,
+            you: { name: playerName }
+          })
+          setPlayer1Health(100)
+          setPlayer2Health(100)
+          setGameState('playing')
+          startPolling(result.matchId)
+        } else {
+          // Continuar verificando
+          setTimeout(checkQueue, 1000)
+        }
+      } catch (error) {
+        console.error('Erro ao entrar na fila:', error)
+        setTimeout(checkQueue, 1000)
+      }
+    }
+
+    checkQueue()
+  }
+
+  const handleAction = async (action: 'attack' | 'defend') => {
     if (!canAttack && action === 'attack') return
     
-    socket.emit('player-action', {
-      matchId: matchData.matchId,
-      action
-    })
+    try {
+      const response = await fetch('/api/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          matchId: matchData.matchId,
+          playerId,
+          action
+        })
+      })
+
+      if (response.ok) {
+        const match = await response.json()
+        setPlayer1Health(match.player1.health)
+        setPlayer2Health(match.player2.health)
+        
+        if (match.lastAction) {
+          setLastAction(match.lastAction)
+          setTimeout(() => setLastAction(null), 1000)
+        }
+
+        if (match.winner) {
+          const winnerName = match.winner === matchData.playerNumber ? playerName : matchData.opponent
+          setWinner(winnerName)
+          setGameState('gameover')
+          if (pollingInterval.current) {
+            clearInterval(pollingInterval.current)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao executar ação:', error)
+    }
 
     if (action === 'attack') {
       setCanAttack(false)
