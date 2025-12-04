@@ -12,12 +12,10 @@ export default function Home() {
   const [lastAction, setLastAction] = useState<any>(null)
   const [winner, setWinner] = useState<string>('')
   const [currentTurn, setCurrentTurn] = useState<number>(0)
-  const [turnTimeLeft, setTurnTimeLeft] = useState<number>(10)
   const [isMyTurn, setIsMyTurn] = useState<boolean>(false)
   const [myCombo, setMyCombo] = useState<number>(0)
   const [opponentCombo, setOpponentCombo] = useState<number>(0)
   const pollingInterval = useRef<NodeJS.Timeout | null>(null)
-  const timerInterval = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     return () => {
@@ -60,11 +58,6 @@ export default function Home() {
             setOpponentCombo(match.player1.combo)
           }
 
-          // Calcular tempo restante do turno
-          const elapsed = Date.now() - match.turnStartTime
-          const timeLeft = Math.max(0, Math.ceil((match.turnDuration - elapsed) / 1000))
-          setTurnTimeLeft(timeLeft)
-
           // Verificar se é meu turno
           setIsMyTurn(match.currentTurn === matchData.playerNumber)
 
@@ -82,9 +75,6 @@ export default function Home() {
             setGameState('gameover')
             if (pollingInterval.current) {
               clearInterval(pollingInterval.current)
-            }
-            if (timerInterval.current) {
-              clearInterval(timerInterval.current)
             }
           }
         } else {
@@ -193,9 +183,6 @@ export default function Home() {
           setGameState('gameover')
           if (pollingInterval.current) {
             clearInterval(pollingInterval.current)
-          }
-          if (timerInterval.current) {
-            clearInterval(timerInterval.current)
           }
         }
       }
@@ -314,7 +301,6 @@ export default function Home() {
                 {lastAction.action === 'attack' && `💥 ${lastAction.damage} de dano!`}
                 {lastAction.action === 'special' && `⚡ ESPECIAL! ${lastAction.damage} de dano!`}
                 {lastAction.action === 'defend' && '🛡️ Defendendo!'}
-                {lastAction.action === 'timeout' && '⏰ Tempo esgotado!'}
               </div>
             )}
           </div>
@@ -323,12 +309,12 @@ export default function Home() {
             {isMyTurn ? (
               <div className={styles.yourTurn}>
                 <h3>🎯 SEU TURNO!</h3>
-                <div className={styles.timer}>⏱️ {turnTimeLeft}s</div>
+                <p>Escolha sua ação</p>
               </div>
             ) : (
               <div className={styles.opponentTurn}>
                 <h3>⏳ Turno do Oponente</h3>
-                <div className={styles.timer}>{turnTimeLeft}s</div>
+                <p>Aguarde sua vez...</p>
               </div>
             )}
           </div>

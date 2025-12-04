@@ -352,9 +352,15 @@
 }
 
 .yourTurn h3 {
-  margin: 0 0 10px 0;
+  margin: 0 0 5px 0;
   font-size: 1.8rem;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.yourTurn p {
+  margin: 0;
+  font-size: 1.1rem;
+  opacity: 0.9;
 }
 
 .opponentTurn {
@@ -365,15 +371,15 @@
 }
 
 .opponentTurn h3 {
-  margin: 0 0 10px 0;
+  margin: 0 0 5px 0;
   font-size: 1.5rem;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.timer {
-  font-size: 2rem;
-  font-weight: bold;
-  font-family: 'Courier New', monospace;
+.opponentTurn p {
+  margin: 0;
+  font-size: 1.1rem;
+  opacity: 0.9;
 }
 
 @keyframes pulse {

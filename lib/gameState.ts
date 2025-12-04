@@ -13,8 +13,6 @@ interface Match {
   player1: Player;
   player2: Player;
   currentTurn: number; // 1 ou 2
-  turnStartTime: number;
-  turnDuration: number; // 10 segundos em ms
   lastAction?: {
     player: number;
     action: string;
@@ -93,8 +91,6 @@ class GameState {
           player1: { id: waitingId, name: waitingData.name, health: 100, lastSeen: now, color: waitingData.color, combo: 0 },
           player2: { id: playerId, name: playerName, health: 100, lastSeen: now, color: playerColor, combo: 0 },
           currentTurn: firstPlayer,
-          turnStartTime: now,
-          turnDuration: 10000, // 10 segundos
           createdAt: now
         };
 
@@ -127,20 +123,6 @@ class GameState {
       match.player1.lastSeen = now;
     } else if (match.player2.id === playerId) {
       match.player2.lastSeen = now;
-    }
-
-    // Verificar se o turno expirou (10 segundos)
-    const turnElapsed = now - match.turnStartTime;
-    if (turnElapsed >= match.turnDuration && !match.winner) {
-      // Turno expirou, passar para o próximo jogador
-      match.currentTurn = match.currentTurn === 1 ? 2 : 1;
-      match.turnStartTime = now;
-      match.lastAction = {
-        player: match.currentTurn === 1 ? 2 : 1,
-        action: 'timeout',
-        timestamp: now
-      };
-      console.log(`[GameState] Turn timeout in match ${matchId}. Now it's player ${match.currentTurn}'s turn`);
     }
 
     return match;
@@ -228,7 +210,6 @@ class GameState {
     // Trocar turno após ação (se o jogo não acabou)
     if (!match.winner) {
       match.currentTurn = match.currentTurn === 1 ? 2 : 1;
-      match.turnStartTime = now;
       console.log(`[GameState] Turn changed to player ${match.currentTurn}`);
     }
 
