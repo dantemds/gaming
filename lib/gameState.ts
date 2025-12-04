@@ -10,6 +10,9 @@ interface Match {
   id: string;
   player1: Player;
   player2: Player;
+  currentTurn: number; // 1 ou 2
+  turnStartTime: number;
+  turnDuration: number; // 10 segundos em ms
   lastAction?: {
     player: number;
     action: string;
@@ -79,11 +82,18 @@ class GameState {
       if (waitingId !== playerId) {
         // Criar match
         const matchId = `match-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        // Sortear quem começa (1 ou 2)
+        const firstPlayer = Math.random() < 0.5 ? 1 : 2;
+        const now = Date.now();
+        
         const match: Match = {
           id: matchId,
-          player1: { id: waitingId, name: waitingData.name, health: 100, lastSeen: Date.now() },
-          player2: { id: playerId, name: playerName, health: 100, lastSeen: Date.now() },
-          createdAt: Date.now()
+          player1: { id: waitingId, name: waitingData.name, health: 100, lastSeen: now },
+          player2: { id: playerId, name: playerName, health: 100, lastSeen: now },
+          currentTurn: firstPlayer,
+          turnStartTime: now,
+          turnDuration: 10000, // 10 segundos
+          createdAt: now
         };
 
         this.matches.set(matchId, match);
@@ -91,7 +101,7 @@ class GameState {
         this.playerToMatch.set(playerId, matchId);
         this.waitingPlayers.delete(waitingId);
 
-        console.log(`[GameState] Match created: ${matchId} - ${waitingData.name} vs ${playerName}`);
+        console.log(`[GameState] Match created: ${matchId} - ${waitingData.name} vs ${playerName} - Player ${firstPlayer} starts`);
         return { status: 'matched', matchId, playerNumber: 2, opponent: waitingData.name };
       }
     }
@@ -108,11 +118,27 @@ class GameState {
     const match = this.matches.get(matchId);
     if (!match) return null;
 
+    const now = Date.now();
+
     // Atualizar lastSeen
     if (match.player1.id === playerId) {
-      match.player1.lastSeen = Date.now();
+      match.player1.lastSeen = now;
     } else if (match.player2.id === playerId) {
-      match.player2.lastSeen = Date.now();
+      match.player2.lastSeen = now;
+    }
+
+    // Verificar se o turno expirou (10 segundos)
+    const turnElapsed = now - match.turnStartTime;
+    if (turnElapsed >= match.turnDuration && !match.winner) {
+      // Turno expirou, passar para o próximo jogador
+      match.currentTurn = match.currentTurn === 1 ? 2 : 1;
+      match.turnStartTime = now;
+      match.lastAction = {
+        player: match.currentTurn === 1 ? 2 : 1,
+        action: 'timeout',
+        timestamp: now
+      };
+      console.log(`[GameState] Turn timeout in match ${matchId}. Now it's player ${match.currentTurn}'s turn`);
     }
 
     return match;
@@ -123,32 +149,51 @@ class GameState {
     if (!match) return null;
 
     const isPlayer1 = match.player1.id === playerId;
+    const playerNumber = isPlayer1 ? 1 : 2;
     const attacker = isPlayer1 ? match.player1 : match.player2;
     const defender = isPlayer1 ? match.player2 : match.player1;
 
-    attacker.lastSeen = Date.now();
+    const now = Date.now();
+    attacker.lastSeen = now;
+
+    // Verificar se é o turno deste jogador
+    if (match.currentTurn !== playerNumber) {
+      console.log(`[GameState] Player ${playerNumber} tried to act but it's player ${match.currentTurn}'s turn`);
+      return match; // Retorna sem fazer nada
+    }
 
     if (action === 'attack') {
       const damage = Math.floor(Math.random() * 15) + 5; // 5-20 damage
       defender.health = Math.max(0, defender.health - damage);
 
       match.lastAction = {
-        player: isPlayer1 ? 1 : 2,
+        player: playerNumber,
         action: 'attack',
         damage,
-        timestamp: Date.now()
+        timestamp: now
       };
+
+      console.log(`[GameState] Player ${playerNumber} attacked for ${damage} damage`);
 
       // Verificar vitória
       if (defender.health <= 0) {
-        match.winner = isPlayer1 ? 1 : 2;
+        match.winner = playerNumber;
+        console.log(`[GameState] Player ${playerNumber} wins!`);
       }
     } else if (action === 'defend') {
       match.lastAction = {
-        player: isPlayer1 ? 1 : 2,
+        player: playerNumber,
         action: 'defend',
-        timestamp: Date.now()
+        timestamp: now
       };
+      console.log(`[GameState] Player ${playerNumber} defended`);
+    }
+
+    // Trocar turno após ação (se o jogo não acabou)
+    if (!match.winner) {
+      match.currentTurn = match.currentTurn === 1 ? 2 : 1;
+      match.turnStartTime = now;
+      console.log(`[GameState] Turn changed to player ${match.currentTurn}`);
     }
 
     return match;

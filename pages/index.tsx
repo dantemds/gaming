@@ -10,8 +10,11 @@ export default function Home() {
   const [player2Health, setPlayer2Health] = useState(100)
   const [lastAction, setLastAction] = useState<any>(null)
   const [winner, setWinner] = useState<string>('')
-  const [canAttack, setCanAttack] = useState(true)
+  const [currentTurn, setCurrentTurn] = useState<number>(0)
+  const [turnTimeLeft, setTurnTimeLeft] = useState<number>(10)
+  const [isMyTurn, setIsMyTurn] = useState<boolean>(false)
   const pollingInterval = useRef<NodeJS.Timeout | null>(null)
+  const timerInterval = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     return () => {
@@ -43,6 +46,15 @@ export default function Home() {
           
           setPlayer1Health(match.player1.health)
           setPlayer2Health(match.player2.health)
+          setCurrentTurn(match.currentTurn)
+
+          // Calcular tempo restante do turno
+          const elapsed = Date.now() - match.turnStartTime
+          const timeLeft = Math.max(0, Math.ceil((match.turnDuration - elapsed) / 1000))
+          setTurnTimeLeft(timeLeft)
+
+          // Verificar se é meu turno
+          setIsMyTurn(match.currentTurn === matchData.playerNumber)
 
           if (match.lastAction && match.lastAction.timestamp) {
             const actionAge = Date.now() - match.lastAction.timestamp
@@ -58,6 +70,9 @@ export default function Home() {
             setGameState('gameover')
             if (pollingInterval.current) {
               clearInterval(pollingInterval.current)
+            }
+            if (timerInterval.current) {
+              clearInterval(timerInterval.current)
             }
           }
         } else {
@@ -131,7 +146,11 @@ export default function Home() {
   }
 
   const handleAction = async (action: 'attack' | 'defend') => {
-    if (!canAttack && action === 'attack') return
+    // Só permitir ação se for o turno do jogador
+    if (!isMyTurn) {
+      console.log('Não é seu turno!')
+      return
+    }
     
     try {
       const response = await fetch('/api/action', {
@@ -148,6 +167,8 @@ export default function Home() {
         const match = await response.json()
         setPlayer1Health(match.player1.health)
         setPlayer2Health(match.player2.health)
+        setCurrentTurn(match.currentTurn)
+        setIsMyTurn(match.currentTurn === matchData.playerNumber)
         
         if (match.lastAction) {
           setLastAction(match.lastAction)
@@ -161,15 +182,13 @@ export default function Home() {
           if (pollingInterval.current) {
             clearInterval(pollingInterval.current)
           }
+          if (timerInterval.current) {
+            clearInterval(timerInterval.current)
+          }
         }
       }
     } catch (error) {
       console.error('Erro ao executar ação:', error)
-    }
-
-    if (action === 'attack') {
-      setCanAttack(false)
-      setTimeout(() => setCanAttack(true), 1000)
     }
   }
 
@@ -266,6 +285,21 @@ export default function Home() {
               <div className={styles.actionFeedback}>
                 {lastAction.action === 'attack' && `💥 ${lastAction.damage} de dano!`}
                 {lastAction.action === 'defend' && '🛡️ Defendendo!'}
+                {lastAction.action === 'timeout' && '⏰ Tempo esgotado!'}
+              </div>
+            )}
+          </div>
+
+          <div className={styles.turnIndicator}>
+            {isMyTurn ? (
+              <div className={styles.yourTurn}>
+                <h3>🎯 SEU TURNO!</h3>
+                <div className={styles.timer}>⏱️ {turnTimeLeft}s</div>
+              </div>
+            ) : (
+              <div className={styles.opponentTurn}>
+                <h3>⏳ Turno do Oponente</h3>
+                <div className={styles.timer}>{turnTimeLeft}s</div>
               </div>
             )}
           </div>
@@ -274,13 +308,14 @@ export default function Home() {
             <button 
               onClick={() => handleAction('attack')}
               className={`${styles.actionButton} ${styles.attackButton}`}
-              disabled={!canAttack}
+              disabled={!isMyTurn}
             >
               👊 Atacar
             </button>
             <button 
               onClick={() => handleAction('defend')}
               className={`${styles.actionButton} ${styles.defendButton}`}
+              disabled={!isMyTurn}
             >
               🛡️ Defender
             </button>
