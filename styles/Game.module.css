@@ -1,0 +1,411 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* Login Screen */
+.loginScreen {
+  text-align: center;
+  background: white;
+  padding: 60px 40px;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 100%;
+}
+
+.title {
+  font-size: 2.5rem;
+  margin-bottom: 30px;
+  color: #333;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.loginForm {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.input {
+  padding: 15px 20px;
+  font-size: 1.1rem;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  transition: all 0.3s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.button {
+  padding: 15px 30px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.button:active {
+  transform: translateY(0);
+}
+
+/* Waiting Screen */
+.waitingScreen {
+  text-align: center;
+  background: white;
+  padding: 60px 40px;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 100%;
+}
+
+.loader {
+  border: 8px solid #f3f3f3;
+  border-top: 8px solid #667eea;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  animation: spin 1s linear infinite;
+  margin: 30px auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.waitingText {
+  font-size: 1.2rem;
+  color: #666;
+  margin-top: 20px;
+}
+
+/* Game Screen */
+.gameScreen {
+  width: 100%;
+  max-width: 1200px;
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.gameHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+  gap: 20px;
+}
+
+.playerInfo {
+  flex: 1;
+  text-align: center;
+}
+
+.playerInfo h2 {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.healthBarContainer {
+  width: 100%;
+  height: 30px;
+  background: #ddd;
+  border-radius: 15px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.healthBar {
+  height: 100%;
+  transition: width 0.5s ease;
+  border-radius: 15px;
+}
+
+.player1Health {
+  background: linear-gradient(90deg, #4CAF50, #8BC34A);
+}
+
+.player2Health {
+  background: linear-gradient(90deg, #2196F3, #03A9F4);
+}
+
+.healthText {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #666;
+}
+
+.vs {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #667eea;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Arena */
+.arena {
+  position: relative;
+  height: 400px;
+  background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 50%, #90EE90 50%, #98FB98 100%);
+  border-radius: 15px;
+  margin-bottom: 30px;
+  overflow: hidden;
+  box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  padding: 40px;
+}
+
+/* Fighters */
+.fighter {
+  position: relative;
+  width: 80px;
+  height: 200px;
+  transition: transform 0.3s;
+}
+
+.fighter1 {
+  transform-origin: center bottom;
+}
+
+.fighter2 {
+  transform-origin: center bottom;
+}
+
+.attacking {
+  animation: attack 0.5s ease;
+}
+
+@keyframes attack {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  50% { transform: translateX(30px) rotate(10deg); }
+}
+
+.hurt {
+  animation: hurt 0.5s ease;
+}
+
+@keyframes hurt {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+/* Fighter body parts */
+.head {
+  width: 40px;
+  height: 40px;
+  background: #FFD700;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 3px solid #333;
+}
+
+.body {
+  width: 50px;
+  height: 80px;
+  background: #FF6347;
+  position: absolute;
+  top: 45px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 10px;
+  border: 3px solid #333;
+}
+
+.armLeft,
+.armRight {
+  width: 15px;
+  height: 60px;
+  background: #FFD700;
+  position: absolute;
+  top: 50px;
+  border-radius: 10px;
+  border: 2px solid #333;
+}
+
+.armLeft {
+  left: 5px;
+  transform: rotate(-20deg);
+}
+
+.armRight {
+  right: 5px;
+  transform: rotate(20deg);
+}
+
+.legLeft,
+.legRight {
+  width: 20px;
+  height: 70px;
+  background: #4169E1;
+  position: absolute;
+  bottom: 0;
+  border-radius: 10px;
+  border: 2px solid #333;
+}
+
+.legLeft {
+  left: 15px;
+}
+
+.legRight {
+  right: 15px;
+}
+
+/* Action Feedback */
+.actionFeedback {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2rem;
+  font-weight: bold;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  animation: fadeInOut 1s ease;
+  pointer-events: none;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+.actionButton {
+  padding: 20px 40px;
+  font-size: 1.3rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.actionButton:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.actionButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.actionButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.attackButton {
+  background: linear-gradient(135deg, #FF6B6B, #FF5252);
+  color: white;
+}
+
+.defendButton {
+  background: linear-gradient(135deg, #4ECDC4, #44A08D);
+  color: white;
+}
+
+/* Game Over Screen */
+.gameoverScreen {
+  text-align: center;
+  background: white;
+  padding: 60px 40px;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 100%;
+}
+
+.winnerText {
+  font-size: 1.3rem;
+  color: #666;
+  margin: 20px 0 40px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .gameHeader {
+    flex-direction: column;
+  }
+
+  .vs {
+    transform: rotate(90deg);
+  }
+
+  .arena {
+    height: 300px;
+    padding: 20px;
+  }
+
+  .fighter {
+    width: 60px;
+    height: 150px;
+  }
+
+  .head {
+    width: 30px;
+    height: 30px;
+  }
+
+  .body {
+    width: 40px;
+    height: 60px;
+    top: 35px;
+  }
+
+  .armLeft,
+  .armRight {
+    width: 12px;
+    height: 45px;
+    top: 40px;
+  }
+
+  .legLeft,
+  .legRight {
+    width: 15px;
+    height: 50px;
+  }
+
+  .controls {
+    flex-direction: column;
+  }
+
+  .actionButton {
+    width: 100%;
+  }
+}
