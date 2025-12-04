@@ -4,6 +4,8 @@ interface Player {
   name: string;
   health: number;
   lastSeen: number;
+  color: string;
+  combo: number; // Contador de ataques consecutivos bem-sucedidos
 }
 
 interface Match {
@@ -24,7 +26,7 @@ interface Match {
 }
 
 class GameState {
-  private waitingPlayers: Map<string, { name: string; timestamp: number }> = new Map();
+  private waitingPlayers: Map<string, { name: string; color: string; timestamp: number }> = new Map();
   private matches: Map<string, Match> = new Map();
   private playerToMatch: Map<string, string> = new Map();
 
@@ -57,7 +59,7 @@ class GameState {
     }
   }
 
-  joinQueue(playerId: string, playerName: string): { status: 'waiting' | 'matched'; matchId?: string; playerNumber?: number; opponent?: string } {
+  joinQueue(playerId: string, playerName: string, playerColor: string = '#FF6347'): { status: 'waiting' | 'matched'; matchId?: string; playerNumber?: number; opponent?: string; opponentColor?: string } {
     this.cleanupInactivePlayers();
 
     console.log(`[GameState] Player ${playerName} (${playerId}) joining queue`);
@@ -88,8 +90,8 @@ class GameState {
         
         const match: Match = {
           id: matchId,
-          player1: { id: waitingId, name: waitingData.name, health: 100, lastSeen: now },
-          player2: { id: playerId, name: playerName, health: 100, lastSeen: now },
+          player1: { id: waitingId, name: waitingData.name, health: 100, lastSeen: now, color: waitingData.color, combo: 0 },
+          player2: { id: playerId, name: playerName, health: 100, lastSeen: now, color: playerColor, combo: 0 },
           currentTurn: firstPlayer,
           turnStartTime: now,
           turnDuration: 10000, // 10 segundos
@@ -102,12 +104,12 @@ class GameState {
         this.waitingPlayers.delete(waitingId);
 
         console.log(`[GameState] Match created: ${matchId} - ${waitingData.name} vs ${playerName} - Player ${firstPlayer} starts`);
-        return { status: 'matched', matchId, playerNumber: 2, opponent: waitingData.name };
+        return { status: 'matched', matchId, playerNumber: 2, opponent: waitingData.name, opponentColor: waitingData.color };
       }
     }
 
     // Adicionar à fila (atualizar timestamp se já estiver na fila)
-    this.waitingPlayers.set(playerId, { name: playerName, timestamp: Date.now() });
+    this.waitingPlayers.set(playerId, { name: playerName, color: playerColor, timestamp: Date.now() });
     console.log(`[GameState] Player added to queue. Queue size: ${this.waitingPlayers.size}`);
     return { status: 'waiting' };
   }
@@ -144,7 +146,7 @@ class GameState {
     return match;
   }
 
-  performAction(matchId: string, playerId: string, action: 'attack' | 'defend'): Match | null {
+  performAction(matchId: string, playerId: string, action: 'attack' | 'defend' | 'special'): Match | null {
     const match = this.matches.get(matchId);
     if (!match) return null;
 
@@ -166,6 +168,11 @@ class GameState {
       const damage = Math.floor(Math.random() * 15) + 5; // 5-20 damage
       defender.health = Math.max(0, defender.health - damage);
 
+      // Incrementar combo do atacante
+      attacker.combo++;
+      // Resetar combo do defensor
+      defender.combo = 0;
+
       match.lastAction = {
         player: playerNumber,
         action: 'attack',
@@ -173,7 +180,35 @@ class GameState {
         timestamp: now
       };
 
-      console.log(`[GameState] Player ${playerNumber} attacked for ${damage} damage`);
+      console.log(`[GameState] Player ${playerNumber} attacked for ${damage} damage. Combo: ${attacker.combo}`);
+
+      // Verificar vitória
+      if (defender.health <= 0) {
+        match.winner = playerNumber;
+        console.log(`[GameState] Player ${playerNumber} wins!`);
+      }
+    } else if (action === 'special') {
+      // Ataque especial: requer 3 combos e causa 30-45 de dano
+      if (attacker.combo < 3) {
+        console.log(`[GameState] Player ${playerNumber} tried special but only has ${attacker.combo} combo`);
+        return match; // Não faz nada se não tiver combo suficiente
+      }
+
+      const damage = Math.floor(Math.random() * 16) + 30; // 30-45 damage
+      defender.health = Math.max(0, defender.health - damage);
+
+      // Resetar combo após usar especial
+      attacker.combo = 0;
+      defender.combo = 0;
+
+      match.lastAction = {
+        player: playerNumber,
+        action: 'special',
+        damage,
+        timestamp: now
+      };
+
+      console.log(`[GameState] Player ${playerNumber} used SPECIAL ATTACK for ${damage} damage!`);
 
       // Verificar vitória
       if (defender.health <= 0) {
@@ -181,6 +216,7 @@ class GameState {
         console.log(`[GameState] Player ${playerNumber} wins!`);
       }
     } else if (action === 'defend') {
+      // Defender não reseta combo
       match.lastAction = {
         player: playerNumber,
         action: 'defend',

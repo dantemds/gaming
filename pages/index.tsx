@@ -4,6 +4,7 @@ import styles from '@/styles/Game.module.css'
 export default function Home() {
   const [gameState, setGameState] = useState<'login' | 'waiting' | 'playing' | 'gameover'>('login')
   const [playerName, setPlayerName] = useState('')
+  const [playerColor, setPlayerColor] = useState('#FF6347')
   const [playerId] = useState(() => `player-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
   const [matchData, setMatchData] = useState<any>(null)
   const [player1Health, setPlayer1Health] = useState(100)
@@ -13,6 +14,8 @@ export default function Home() {
   const [currentTurn, setCurrentTurn] = useState<number>(0)
   const [turnTimeLeft, setTurnTimeLeft] = useState<number>(10)
   const [isMyTurn, setIsMyTurn] = useState<boolean>(false)
+  const [myCombo, setMyCombo] = useState<number>(0)
+  const [opponentCombo, setOpponentCombo] = useState<number>(0)
   const pollingInterval = useRef<NodeJS.Timeout | null>(null)
   const timerInterval = useRef<NodeJS.Timeout | null>(null)
 
@@ -47,6 +50,15 @@ export default function Home() {
           setPlayer1Health(match.player1.health)
           setPlayer2Health(match.player2.health)
           setCurrentTurn(match.currentTurn)
+
+          // Atualizar combos
+          if (matchData.playerNumber === 1) {
+            setMyCombo(match.player1.combo)
+            setOpponentCombo(match.player2.combo)
+          } else {
+            setMyCombo(match.player2.combo)
+            setOpponentCombo(match.player1.combo)
+          }
 
           // Calcular tempo restante do turno
           const elapsed = Date.now() - match.turnStartTime
@@ -116,7 +128,7 @@ export default function Home() {
         const response = await fetch('/api/join', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ playerId, playerName })
+          body: JSON.stringify({ playerId, playerName, playerColor })
         })
 
         const result = await response.json()
@@ -145,7 +157,7 @@ export default function Home() {
     checkQueue()
   }
 
-  const handleAction = async (action: 'attack' | 'defend') => {
+  const handleAction = async (action: 'attack' | 'defend' | 'special') => {
     // Só permitir ação se for o turno do jogador
     if (!isMyTurn) {
       console.log('Não é seu turno!')
@@ -211,6 +223,22 @@ export default function Home() {
               maxLength={20}
               required
             />
+            
+            <div className={styles.colorSelector}>
+              <label>Escolha a cor do seu boneco:</label>
+              <div className={styles.colorOptions}>
+                {['#FF6347', '#4169E1', '#32CD32', '#FFD700', '#FF1493', '#8A2BE2'].map(color => (
+                  <button
+                    key={color}
+                    type="button"
+                    className={`${styles.colorOption} ${playerColor === color ? styles.selected : ''}`}
+                    style={{ backgroundColor: color }}
+                    onClick={() => setPlayerColor(color)}
+                  />
+                ))}
+              </div>
+            </div>
+
             <button type="submit" className={styles.button}>
               Entrar na Fila
             </button>
@@ -284,6 +312,7 @@ export default function Home() {
             {lastAction && (
               <div className={styles.actionFeedback}>
                 {lastAction.action === 'attack' && `💥 ${lastAction.damage} de dano!`}
+                {lastAction.action === 'special' && `⚡ ESPECIAL! ${lastAction.damage} de dano!`}
                 {lastAction.action === 'defend' && '🛡️ Defendendo!'}
                 {lastAction.action === 'timeout' && '⏰ Tempo esgotado!'}
               </div>
@@ -304,6 +333,17 @@ export default function Home() {
             )}
           </div>
 
+          <div className={styles.comboIndicator}>
+            <div className={styles.comboBar}>
+              <span>Seu Combo: {myCombo}/3</span>
+              <div className={styles.comboProgress}>
+                {[1, 2, 3].map(i => (
+                  <div key={i} className={`${styles.comboPoint} ${myCombo >= i ? styles.active : ''}`} />
+                ))}
+              </div>
+            </div>
+          </div>
+
           <div className={styles.controls}>
             <button 
               onClick={() => handleAction('attack')}
@@ -311,6 +351,13 @@ export default function Home() {
               disabled={!isMyTurn}
             >
               👊 Atacar
+            </button>
+            <button 
+              onClick={() => handleAction('special')}
+              className={`${styles.actionButton} ${styles.specialButton}`}
+              disabled={!isMyTurn || myCombo < 3}
+            >
+              ⚡ ESPECIAL {myCombo >= 3 ? '(Pronto!)' : `(${myCombo}/3)`}
             </button>
             <button 
               onClick={() => handleAction('defend')}

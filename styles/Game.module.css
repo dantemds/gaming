@@ -30,6 +30,45 @@
   gap: 20px;
 }
 
+.colorSelector {
+  text-align: center;
+}
+
+.colorSelector label {
+  display: block;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.colorOptions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.colorOption {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 3px solid #ddd;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.colorOption:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.colorOption.selected {
+  border: 4px solid #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+  transform: scale(1.15);
+}
+
 .input {
   padding: 15px 20px;
   font-size: 1.1rem;
@@ -342,11 +381,58 @@
   50% { transform: scale(1.05); }
 }
 
+/* Combo Indicator */
+.comboIndicator {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.comboBar {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  padding: 15px 20px;
+  border-radius: 10px;
+  color: white;
+  display: inline-block;
+}
+
+.comboBar span {
+  display: block;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.comboProgress {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.comboPoint {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: all 0.3s;
+}
+
+.comboPoint.active {
+  background: #FFD700;
+  box-shadow: 0 0 10px #FFD700;
+  animation: glow 1s ease-in-out infinite;
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 10px #FFD700; }
+  50% { box-shadow: 0 0 20px #FFD700; }
+}
+
 /* Controls */
 .controls {
   display: flex;
   gap: 20px;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .actionButton {
@@ -382,6 +468,28 @@
 .defendButton {
   background: linear-gradient(135deg, #4ECDC4, #44A08D);
   color: white;
+}
+
+.specialButton {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: #333;
+  font-weight: bold;
+  position: relative;
+  overflow: hidden;
+}
+
+.specialButton:not(:disabled) {
+  animation: specialPulse 2s ease-in-out infinite;
+}
+
+.specialButton:disabled {
+  background: linear-gradient(135deg, #999, #666);
+  color: #ccc;
+}
+
+@keyframes specialPulse {
+  0%, 100% { box-shadow: 0 4px 8px rgba(255, 215, 0, 0.4); }
+  50% { box-shadow: 0 6px 20px rgba(255, 215, 0, 0.8); }
 }
 
 /* Game Over Screen */

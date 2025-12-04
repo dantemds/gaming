@@ -12,7 +12,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  if (action !== 'attack' && action !== 'defend') {
+  if (action !== 'attack' && action !== 'defend' && action !== 'special') {
     return res.status(400).json({ error: 'Invalid action' });
   }
 
