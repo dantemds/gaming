@@ -26,6 +26,9 @@ export default function Home() {
       clearInterval(pollingInterval.current)
     }
 
+    let consecutiveErrors = 0
+    const maxConsecutiveErrors = 10 // Permitir 10 erros consecutivos (5 segundos)
+
     pollingInterval.current = setInterval(async () => {
       try {
         const response = await fetch(`/api/match/${matchId}`, {
@@ -35,6 +38,7 @@ export default function Home() {
         })
 
         if (response.ok) {
+          consecutiveErrors = 0 // Reset contador de erros
           const match = await response.json()
           
           setPlayer1Health(match.player1.health)
@@ -57,15 +61,30 @@ export default function Home() {
             }
           }
         } else {
-          // Match não encontrado, pode ter expirado
+          consecutiveErrors++
+          console.warn(`Erro no polling (${consecutiveErrors}/${maxConsecutiveErrors})`)
+          
+          // Só mostra erro após muitas tentativas falhas
+          if (consecutiveErrors >= maxConsecutiveErrors) {
+            if (pollingInterval.current) {
+              clearInterval(pollingInterval.current)
+            }
+            alert('Partida encerrada ou expirada!')
+            window.location.reload()
+          }
+        }
+      } catch (error) {
+        consecutiveErrors++
+        console.error(`Erro no polling (${consecutiveErrors}/${maxConsecutiveErrors}):`, error)
+        
+        // Só mostra erro após muitas tentativas falhas
+        if (consecutiveErrors >= maxConsecutiveErrors) {
           if (pollingInterval.current) {
             clearInterval(pollingInterval.current)
           }
-          alert('Partida encerrada ou expirada!')
+          alert('Erro de conexão. Recarregando...')
           window.location.reload()
         }
-      } catch (error) {
-        console.error('Erro no polling:', error)
       }
     }, 500) // Poll a cada 500ms
   }

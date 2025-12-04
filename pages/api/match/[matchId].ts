@@ -14,14 +14,23 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   if (req.method === 'GET' || req.method === 'POST') {
-    // Long polling: aguardar por mudanças
-    const match = gameState.getMatchState(matchId, playerId);
-    
-    if (!match) {
-      return res.status(404).json({ error: 'Match not found' });
-    }
+    try {
+      const match = gameState.getMatchState(matchId, playerId);
+      
+      if (!match) {
+        // Retornar erro 404 mas sem quebrar o polling
+        return res.status(404).json({ 
+          error: 'Match not found',
+          message: 'Match may have expired or been cleaned up'
+        });
+      }
 
-    res.status(200).json(match);
+      // Retornar o estado do match
+      res.status(200).json(match);
+    } catch (error) {
+      console.error('Error getting match state:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
   } else {
     res.status(405).json({ error: 'Method not allowed' });
   }
